@@ -147,11 +147,16 @@ class RelayProxyTool:
     # 内部工具
     # ──────────────────────────────────────────
 
-    def _headers(self) -> dict:
-        headers = {"Content-Type": "application/json"}
+    def headers(self) -> dict:
+        """Build request headers (public for tests)."""
+        h = {"Content-Type": "application/json"}
         if self.admin_token:
-            headers["Authorization"] = f"Bearer {self.admin_token}"
-        return headers
+            h["Authorization"] = f"Bearer {self.admin_token}"
+        return h
+
+    def _headers(self) -> dict:
+        """Internal alias — kept for backward compat."""
+        return self.headers()
 
     def _post(self, path: str, payload: dict) -> dict:
         resp = self._client.post(

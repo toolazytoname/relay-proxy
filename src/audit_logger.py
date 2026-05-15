@@ -186,6 +186,13 @@ class AuditLogger:
 
         return count
 
+    def get_record(self, log_id: str) -> Optional[dict]:
+        """根据 log_id 查询单条记录"""
+        for record in self.query(limit=10000):
+            if record.get("log_id") == log_id:
+                return record
+        return None
+
     def recent(self, limit: int = 50) -> list[dict]:
         """获取最近日志"""
         return self.query(date=None, limit=limit)
