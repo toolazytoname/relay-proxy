@@ -1,0 +1,24 @@
+# fly.toml for Relay Proxy
+app = "relay-proxy"
+primary_region = "hkg"  # 香港节点，延迟低
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8000"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = false  # 保持在线
+  auto_start_machines = true
+  min_machines_running = 1  # 至少1台机器运行
+
+[[vm]]
+  memory = "256mb"
+  cpu = 1
+
+[mounts]
+  source = "relay_data"
+  destination = "/tmp/relay-proxy"

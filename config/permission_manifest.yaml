@@ -1,0 +1,34 @@
+# Relay Proxy - 权限清单
+# 此文件由 intent_generate API 生成，或手动编辑
+
+version: "1.0"
+
+# 默认策略（未匹配的服务器适用）
+default_policy:
+  readonly: true
+  allowed_commands:
+    - "tail"
+    - "grep"
+    - "cat"
+    - "ls"
+    - "df"
+    - "free"
+    - "ps"
+    - "uptime"
+    - "whoami"
+    - "hostname"
+    - "pwd"
+    - "echo"
+  denied_commands:
+    - "rm -rf /"
+    - "dd if="
+    - ":(){ :|:& };:"
+    - "curl.*|.*sh"
+    - "wget.*|.*sh"
+  allowed_paths:
+    - "/var/log/*"
+    - "/home/*/logs/*"
+  denied_paths: []
+
+# 服务器列表（运行前请替换为真实配置）
+servers: []
