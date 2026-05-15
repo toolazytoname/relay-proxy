@@ -159,7 +159,12 @@ class RelayProxyTool:
             json=payload,
             headers=self._headers(),
         )
-        resp.raise_for_status()
+        try:
+            resp.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            raise RuntimeError(
+                f"Relay API error {exc.response.status_code} on {path}: {exc.response.text}"
+            ) from exc
         return resp.json()
 
     def _get(self, path: str, params: Optional[dict] = None) -> dict:
@@ -168,7 +173,12 @@ class RelayProxyTool:
             params=params,
             headers=self._headers(),
         )
-        resp.raise_for_status()
+        try:
+            resp.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            raise RuntimeError(
+                f"Relay API error {exc.response.status_code} on {path}: {exc.response.text}"
+            ) from exc
         return resp.json()
 
     def _delete(self, path: str) -> dict:
@@ -176,7 +186,12 @@ class RelayProxyTool:
             f"{self.relay_url}{path}",
             headers=self._headers(),
         )
-        resp.raise_for_status()
+        try:
+            resp.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            raise RuntimeError(
+                f"Relay API error {exc.response.status_code} on {path}: {exc.response.text}"
+            ) from exc
         return resp.json()
 
     # ──────────────────────────────────────────

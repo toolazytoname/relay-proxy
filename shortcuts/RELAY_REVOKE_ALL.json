@@ -1,0 +1,27 @@
+{
+  "name": "Relay 撤销所有会话",
+  "description": "紧急撤销所有活跃会话，一键切断所有Agent权限",
+  "trigger": "问 Siri：Relay切断",
+  "confirm": "确定撤销所有Agent会话？",
+  "steps": [
+    {
+      "action": "URL",
+      "url": "https://placeholder-relay.fly.dev/api/v1/sessions",
+      "method": "DELETE"
+    },
+    {
+      "action": "Headers",
+      "headers": {
+        "Authorization": "Bearer ${RELAY_ADMIN_TOKEN}"
+      }
+    },
+    {
+      "action": "Get",
+      "result_var": "result"
+    },
+    {
+      "action": "Text",
+      "text": "已撤销 ${result.revoked_count} 个会话"
+    }
+  ]
+}

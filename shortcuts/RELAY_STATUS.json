@@ -1,0 +1,26 @@
+{
+  "name": "Relay Proxy 状态",
+  "description": "查看所有活跃会话（不含敏感信息）",
+  "trigger": "问 Siri：Relay状态",
+  "steps": [
+    {
+      "action": "URL",
+      "url": "https://placeholder-relay.fly.dev/api/v1/sessions",
+      "method": "GET"
+    },
+    {
+      "action": "Headers",
+      "headers": {
+        "Authorization": "Bearer ${RELAY_ADMIN_TOKEN}"
+      }
+    },
+    {
+      "action": "Get",
+      "result_var": "sessions"
+    },
+    {
+      "action": "Text",
+      "text": "Relay Proxy 活跃会话\\n${sessions}"
+    }
+  ]
+}

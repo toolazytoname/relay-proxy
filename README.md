@@ -5,6 +5,9 @@
 **核心问题**：Agent 需要操作服务器，但你不想把 root 密码交给它。
 **解法**：Agent 只跟 Relay Server 说话，Relay Server 用临时凭证连接服务器，所有操作都有记录，随时可撤销。
 
+[![GitHub stars](https://img.shields.io/github/stars/toolazytoname/relay-proxy)](https://github.com/toolazytoname/relay-proxy)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 ---
 
 ## 架构
@@ -31,7 +34,18 @@
 - 📋 **完整审计** — 谁、什么时候、做了什么、耗时多久，全部记录
 - 🧠 **意图映射** — Agent 说"帮我看看服务器状态"，自动解析为 `uptime && df -h`
 - 🔍 **权限预检** — 不确定的命令可以先问再执行
-- 📱 **管理CLI** — 手机上也能查日志、撤销会话（配合 Shortcuts）
+- 📱 **管理CLI** — 手机上也能查日志、撤销会话（配合 iOS Shortcuts）
+- 📱 **手机快捷指令** — Siri 一句话查看状态、撤销会话、查审计
+
+---
+
+## 文档目录
+
+| 文档 | 内容 |
+|------|------|
+| [DEPLOY.md](DEPLOY.md) | Fly.io 部署完整步骤 |
+| [PRIVACY.md](PRIVACY.md) | 密钥安全与隐私保护 |
+| [shortcuts/](shortcuts/) | iOS Shortcut 快捷指令 |
 
 ---
 
@@ -49,6 +63,8 @@ FLY_API_TOKEN=xxx ./scripts/setup_all.sh
 docker build -t relay-proxy .
 docker run -e ADMIN_TOKEN=xxx -p 8000:8000 relay-proxy
 ```
+
+详细步骤见 [DEPLOY.md](DEPLOY.md)
 
 ### 2. 初始化服务器
 
@@ -105,6 +121,18 @@ python3 cli_admin.py permissions check --server web-1 --command "docker ps"
 
 ---
 
+## iOS 快捷指令
+
+详见 [shortcuts/IMPORT_GUIDE.md](shortcuts/IMPORT_GUIDE.md)
+
+| 触发词 | 作用 |
+|--------|------|
+| Siri：Relay状态 | 查看活跃会话 |
+| Siri：Relay切断 | 撤销所有Agent会话 |
+| Siri：Relay审计 | 查询审计记录 |
+
+---
+
 ## 权限清单示例
 
 ```yaml
@@ -154,6 +182,8 @@ servers:
 }
 ```
 
+> **隐私说明**：审计日志记录命令内容，但**不记录命令输出**，保护服务器敏感数据。详见 [PRIVACY.md](PRIVACY.md)
+
 ---
 
 ## 目录结构
@@ -162,34 +192,44 @@ servers:
 relay-proxy/
 ├── src/
 │   ├── main.py              # FastAPI 主入口
-│   ├── auth.py              # Token + 会话管理
+│   ├── auth.py               # Token + 会话管理
 │   ├── permission_engine.py  # 权限引擎 + 意图映射
-│   ├── ssh_client.py        # SSH 连接池
-│   ├── audit_logger.py      # 审计日志
-│   └── hermes_tool.py       # Hermes Agent 接口封装
+│   ├── ssh_client.py         # SSH 连接池
+│   ├── audit_logger.py       # 审计日志
+│   └── hermes_tool.py        # Hermes Agent 接口封装
 ├── scripts/
-│   ├── init_server.py       # 服务器初始化
-│   └── generate_ssh_keys.py # SSH 密钥生成
-├── cli_admin.py             # 管理CLI
+│   ├── init_server.py        # 服务器初始化
+│   └── generate_ssh_keys.py  # SSH 密钥生成
+├── shortcuts/                 # iOS Shortcut 配置
+│   ├── RELAY_STATUS.json
+│   ├── RELAY_REVOKE_ALL.json
+│   └── IMPORT_GUIDE.md
+├── cli_admin.py               # 管理CLI
 ├── config/
 │   └── permission_manifest.yaml  # 权限清单
+├── DEPLOY.md                  # Fly.io 部署指南
+├── PRIVACY.md                 # 隐私与安全说明
 ├── Dockerfile
 ├── fly.toml
-└── requirements.txt
+├── requirements.txt
+└── README.md
 ```
 
 ---
 
 ## 安全说明
 
+> ⚠️ **请先阅读 [PRIVACY.md](PRIVACY.md)** 了解密钥安全要求。
+
 - Agent 不持有任何服务器密码，只持有临时 SSH Key
 - SSH Key 有 TTL，过期自动失效
 - 所有命令经过权限引擎，超出清单直接拒绝
 - 敏感命令（如 `rm -rf`）在 `denied_commands` 中拦截
 - 管理 Token（ADMIN_TOKEN）仅用于管理操作，Agent 不知道
+- 审计日志不记录命令输出，保护敏感数据
 
 ---
 
 ## License
 
-MIT
+MIT © toolazytoname

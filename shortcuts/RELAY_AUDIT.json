@@ -1,0 +1,31 @@
+{
+  "name": "Relay 审计查询",
+  "description": "查询最近审计记录，支持按服务器过滤",
+  "trigger": "问 Siri：Relay审计",
+  "steps": [
+    {
+      "action": "Ask",
+      "question": "要按哪个服务器过滤？（直接回车查全部）",
+      "result_var": "server_filter"
+    },
+    {
+      "action": "URL",
+      "url": "https://placeholder-relay.fly.dev/api/v1/audit?limit=20&server=${server_filter}",
+      "method": "GET"
+    },
+    {
+      "action": "Headers",
+      "headers": {
+        "Authorization": "Bearer ${RELAY_ADMIN_TOKEN}"
+      }
+    },
+    {
+      "action": "Get",
+      "result_var": "records"
+    },
+    {
+      "action": "Text",
+      "text": "Relay 审计记录\\n${records}"
+    }
+  ]
+}
