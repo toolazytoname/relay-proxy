@@ -24,7 +24,7 @@ from .audit_logger import AuditLogger
 # ============================================================
 
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "dev-admin-token-change-me")
-MANIFEST_PATH = Path(os.environ.get("MANIFEST_PATH", "/tmp/relay-proxy/config/permission_manifest.yaml"))
+MANIFEST_PATH = Path(os.environ.get("MANIFEST_PATH", "/opt/relay-proxy/config/permission_manifest.yaml"))
 
 # 从环境变量加载 SSH 私钥
 SSH_KEYS = {}

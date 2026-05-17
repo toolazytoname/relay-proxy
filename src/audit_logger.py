@@ -2,11 +2,11 @@
 Audit Logger - 完整决策链审计日志
 参考: Teleport 决策链审计 + JSONL 结构化存储
 """
-
-import uuid
 import json
-from pathlib import Path
+import os
+import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Optional
 from dataclasses import dataclass, asdict
 
@@ -57,7 +57,7 @@ class AuditLogger:
 
     def __init__(self, log_dir: Optional[Path] = None):
         if log_dir is None:
-            log_dir = Path("/tmp/relay-proxy/logs")
+            log_dir = Path(os.environ.get("LOG_DIR", "/opt/relay-proxy/logs"))
         self.log_dir = log_dir
         self.log_dir.mkdir(parents=True, exist_ok=True)
 

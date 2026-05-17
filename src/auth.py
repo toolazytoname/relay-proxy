@@ -6,14 +6,14 @@ Auth Layer - 短期 Token 管理 + 即时撤销
 import uuid
 import json
 import secrets
+import os
 from pathlib import Path
 from typing import Optional
 from dataclasses import dataclass, asdict
 from datetime import datetime, timedelta, timezone
 
-# Token 存储文件（生产环境建议用 Redis）
-TOKEN_STORE_PATH = Path("/tmp/relay-proxy/tokens.jsonl")
-TOKEN_STORE_PATH.parent.mkdir(parents=True, exist_ok=True)
+# Token 存储文件（可通过环境变量覆盖，生产环境建议用 Redis）
+TOKEN_STORE_PATH = Path(os.environ.get("TOKEN_STORE_PATH", "/opt/relay-proxy/tokens.jsonl"))
 
 
 @dataclass
