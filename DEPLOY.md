@@ -123,7 +123,7 @@ python3 scripts/init_server.py \
 
 ---
 
-## 步骤 8：更新 Herme
+## 步骤 8：更新 Hermes
 
 在 Hermes 的环境变量或配置中设置：
 
