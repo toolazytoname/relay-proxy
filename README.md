@@ -44,6 +44,7 @@
 | 文档 | 内容 |
 |------|------|
 | [DEPLOY.md](DEPLOY.md) | Fly.io 部署完整步骤 |
+| [DEPLOY_SELF_HOSTED.md](DEPLOY_SELF_HOSTED.md) | 自托管部署（自己的 Linux 服务器，完全免费） |
 | [PRIVACY.md](PRIVACY.md) | 密钥安全与隐私保护 |
 | [shortcuts/](shortcuts/) | iOS Shortcut 快捷指令 |
 
@@ -199,7 +200,11 @@ relay-proxy/
 │   └── hermes_tool.py        # Hermes Agent 接口封装
 ├── scripts/
 │   ├── init_server.py        # 服务器初始化
-│   └── generate_ssh_keys.py  # SSH 密钥生成
+│   ├── generate_ssh_keys.py  # SSH 密钥生成
+│   └── deploy_to_server.sh   # 自托管一键部署脚本
+├── deploy/
+│   └── systemd/
+│       └── relay-proxy.service  # systemd 服务配置
 ├── shortcuts/                 # iOS Shortcut 配置
 │   ├── RELAY_STATUS.json
 │   ├── RELAY_REVOKE_ALL.json
@@ -208,6 +213,7 @@ relay-proxy/
 ├── config/
 │   └── permission_manifest.yaml  # 权限清单
 ├── DEPLOY.md                  # Fly.io 部署指南
+├── DEPLOY_SELF_HOSTED.md      # 自托管部署指南
 ├── PRIVACY.md                 # 隐私与安全说明
 ├── Dockerfile
 ├── fly.toml
