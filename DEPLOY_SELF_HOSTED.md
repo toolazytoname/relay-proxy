@@ -87,6 +87,7 @@ cat > /opt/relay-proxy/.env << 'EOF'
 ADMIN_TOKEN=你的管理Token（自己生成）
 MANIFEST_PATH=/opt/relay-proxy/config/permission_manifest.yaml
 LOG_DIR=/opt/relay-proxy/logs
+TOKEN_STORE_PATH=/opt/relay-proxy/tokens.jsonl
 EOF
 chmod 600 /opt/relay-proxy/.env
 chown -R relay:relay /opt/relay-proxy

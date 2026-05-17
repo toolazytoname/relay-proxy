@@ -63,6 +63,7 @@ if [ ! -f "$ENV_FILE" ]; then
 ADMIN_TOKEN=$ADMIN_TOKEN
 MANIFEST_PATH=$APP_DIR/config/permission_manifest.yaml
 LOG_DIR=$APP_DIR/logs
+TOKEN_STORE_PATH=$APP_DIR/tokens.jsonl
 EOF
     sudo mv /tmp/relay-proxy.env $ENV_FILE
     sudo chown relay:relay $ENV_FILE
