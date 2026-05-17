@@ -5,9 +5,8 @@ Audit Logger - 完整决策链审计日志
 
 import uuid
 import json
-import time
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from dataclasses import dataclass, asdict
 
@@ -65,7 +64,7 @@ class AuditLogger:
     def _log_file(self, date: Optional[str] = None) -> Path:
         """获取当天的日志文件路径"""
         if date is None:
-            date = datetime.utcnow().strftime("%Y-%m-%d")
+            date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         return self.log_dir / f"audit_{date}.jsonl"
 
     def log(
@@ -87,11 +86,12 @@ class AuditLogger:
         duration_ms: Optional[int] = None,
     ) -> str:
         """写入一条审计日志"""
-        log_id = f"log_{datetime.utcnow().strftime('%Y%m%d')}_{uuid.uuid4().hex[:6]}"
+        log_id = f"log_{datetime.now(timezone.utc).strftime('%Y%m%d')}_{uuid.uuid4().hex[:6]}"
+        timestamp = datetime.now(timezone.utc).isoformat()[:19] + "+08:00"
 
         log = AuditLog(
             log_id=log_id,
-            timestamp=datetime.utcnow().isoformat() + "+08:00",
+            timestamp=timestamp,
             session_id=session_id,
             token_id=token_id,
             request_raw=request_raw,

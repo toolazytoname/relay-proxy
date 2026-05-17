@@ -388,18 +388,18 @@ class PermissionEngine:
     ) -> dict:
         """将运行时发现的权限请求加入待确认队列"""
         import uuid
-        from datetime import datetime, timedelta
+        from datetime import datetime, timedelta, timezone
 
         pending = {
             "pending_id": f"pend_{uuid.uuid4().hex[:8]}",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
             "session_id": session_id,
             "agent_id": agent_id,
             "server": server,
             "denied_command": denied_command,
             "suggestion": suggestion,
             "status": "pending",
-            "expires_at": (datetime.utcnow() + timedelta(hours=6)).isoformat(),
+            "expires_at": (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=6)).isoformat(),
         }
         self.manifest.pending_permissions.append(pending)
         if self.manifest_path:

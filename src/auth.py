@@ -4,13 +4,12 @@ Auth Layer - 短期 Token 管理 + 即时撤销
 """
 
 import uuid
-import time
 import json
 import secrets
 from pathlib import Path
 from typing import Optional
 from dataclasses import dataclass, asdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 # Token 存储文件（生产环境建议用 Redis）
 TOKEN_STORE_PATH = Path("/tmp/relay-proxy/tokens.jsonl")
@@ -29,7 +28,8 @@ class Token:
 
     @property
     def is_expired(self) -> bool:
-        return datetime.utcnow() > datetime.fromisoformat(self.expires_at)
+        # expires_at 存储时是 naive datetime，保持一致
+        return datetime.now(timezone.utc).replace(tzinfo=None) > datetime.fromisoformat(self.expires_at)
 
     @property
     def is_valid(self) -> bool:
@@ -56,7 +56,7 @@ class AuthLayer:
         ttl_seconds: int = DEFAULT_TTL_SECONDS,
     ) -> Token:
         """创建新的短期 Token"""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         token = Token(
             session_id=f"sess_{uuid.uuid4().hex[:12]}",
             token=secrets.token_urlsafe(32),

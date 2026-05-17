@@ -8,7 +8,6 @@ import time
 from typing import Optional
 from dataclasses import dataclass
 from paramiko import SSHClient, AutoAddPolicy
-from paramiko.channel import Channel
 
 # 锁，保证连接池线程安全
 _pool_lock = threading.Lock()

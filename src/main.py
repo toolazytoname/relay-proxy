@@ -5,12 +5,11 @@ Relay Server - FastAPI 主入口
 
 import os
 import time
-import asyncio
 from pathlib import Path
 from typing import Optional
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Header, Body, Request
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
