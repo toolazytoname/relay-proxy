@@ -8,14 +8,12 @@
 
 1. [它解决什么问题](#1-它解决什么问题)
 2. [架构一览](#2-架构一览)
-3. [快速体验（30分钟跑通）](#3-快速体验30分钟跑通)
-4. [初始化 Linux 服务器](#4-初始化-linux-服务器)
+3. [部署 Relay Server](#3-部署-relay-server)
+4. [初始化要管理的服务器](#4-初始化要管理的服务器)
 5. [配置权限清单](#5-配置权限清单)
-6. [Hermes Agent 集成](#6-hermes-agent-集成)
-7. [手机管理（iOS Shortcut）](#7-手机管理ios-shortcut)
-8. [日常使用命令](#8-日常使用命令)
-9. [安全检查清单](#9-安全检查清单)
-10. [常见问题](#10-常见问题)
+6. [让 AI 执行命令](#6-让-ai-执行命令)
+7. [日常管理命令](#7-日常管理命令)
+8. [常见问题](#8-常见问题)
 
 ---
 
@@ -30,7 +28,7 @@
 
 **Relay Proxy 的方案**：
 ```
-Agent → Relay Server（HTTPS，有管理界面）→ 服务器（只认 SSH Key）
+Agent → Relay Server（HTTPS）→ 服务器（只认 SSH Key）
          ↓
     会话制度：Agent 每次请求生成临时 Key
     权限清单：Agent 只能做清单里的事
@@ -44,7 +42,7 @@ Agent → Relay Server（HTTPS，有管理界面）→ 服务器（只认 SSH Ke
 
 ```
 ┌────────────────┐     HTTPS      ┌────────────────┐    SSH/Key     ┌───────────────┐
-│  Hermes Agent  │ ───────────── → │  Relay Server  │ ──────────── → │  Linux Server │
+│  Hermes Agent  │ ─────────────→ │  Relay Server  │ ────────────→ │  Linux Server │
 │  (你让ta干活)   │   无密码接触     │  (你的云服务器)   │   临时会话Key  │  (要管理的机器) │
 └────────────────┘                └────────────────┘                └───────────────┘
 ```
@@ -59,308 +57,191 @@ Agent → Relay Server（HTTPS，有管理界面）→ 服务器（只认 SSH Ke
 
 ---
 
-## 3. 快速体验（30分钟跑通）
+## 3. 部署 Relay Server
 
-### 步骤 1：部署 Relay Server
-
-**方式A：Docker 部署（推荐）**
+在**你有公网 IP 的服务器**上运行：
 
 ```bash
-docker build -t relay-proxy .
-docker run -d \
-  --name relay-proxy \
-  -e ADMIN_TOKEN=your-admin-token \
-  -e LOG_DIR=/data/logs \
-  -v /path/to/keys:/data/keys:ro \
-  -v /path/to/config:/data/config:ro \
-  -v /path/to/data:/data \
-  -p 8000:8000 \
-  relay-proxy
+curl -L https://raw.githubusercontent.com/toolazytoname/relay-proxy/main/scripts/deploy_to_server.sh | bash
 ```
 
-**方式B：systemd 部署（生产环境）**
+脚本会自动：
+- 创建 `relay` 系统用户
+- 克隆代码到 `/opt/relay-proxy`
+- 安装 Python 环境（uv）
+- 安装依赖
+- 配置 systemd service
+- 启动服务
+
+**部署完成后会显示 ADMIN_TOKEN**，请记录下来。
+
+---
+
+## 4. 初始化要管理的服务器
+
+在**你自己的本地机器**上执行（不是 Relay Server）：
 
 ```bash
-# 复制服务文件
-sudo cp deploy/systemd/relay-proxy.service /etc/systemd/system/
+cd relay-proxy
+pip install paramiko
 
-# 编辑配置
-sudo vim /etc/relay-proxy/config.env  # 设置环境变量
-
-# 启动
-sudo systemctl enable relay-proxy
-sudo systemctl start relay-proxy
+python3 scripts/init_server.py \
+  --host 你的服务器IP \
+  --user root \
+  --password 你的服务器密码
 ```
 
-详细步骤见 [DEPLOY_SELF_HOSTED.md](DEPLOY_SELF_HOSTED.md)
+> 脚本会用 SSH 登录服务器，创建 `relay` 用户并注入公钥。初始化完成后，**服务器密码可以丢弃**，后续 Agent 用 SSH Key 认证。
 
-### 步骤 2：配置环境变量
+---
 
-```bash
-# 管理 Token（必填）
-ADMIN_TOKEN=your-secure-token
+## 5. 配置权限清单
 
-# 日志目录（可选，默认 /opt/relay-proxy/logs）
-LOG_DIR=/data/logs
+### 5.1 什么是权限清单
 
-# 权限清单路径（可选）
-MANIFEST_PATH=/data/config/permission_manifest.yaml
+权限清单（permission_manifest.yaml）决定 AI **只能做什么**。这是 Relay Proxy 的核心安全机制——即使 AI 被入侵，攻击者也只能做清单里允许的事。
 
-# SSH 私钥（从环境变量加载，每服务器一个）
-SSH_KEY_WEB_1=-----BEGIN OPENSSH PRIVATE KEY-----
-SSH_KEY_DB_1=-----BEGIN OPENSSH PRIVATE KEY-----
-```
+### 5.2 默认策略（开箱即用）
 
-### 步骤 3：配置权限清单
+默认配置已经允许以下**只读命令**，你不需要修改：
 
-```bash
-mkdir -p /data/config
-vim /data/config/permission_manifest.yaml
-```
-
-示例配置：
 ```yaml
-version: "1.0"
 default_policy:
-  readonly: false
+  readonly: true
   allowed_commands:
-    - docker ps
-    - docker logs
-    - echo
-    - ls
+    - tail
+    - grep
     - cat
+    - ls
+    - df
+    - free
+    - ps
+    - uptime
+    - whoami
+    - hostname
+    - pwd
+    - echo
+```
+
+### 5.3 添加你的服务器
+
+编辑 `/opt/relay-proxy/config/permission_manifest.yaml`，在 `servers` 列表中添加：
+
+```yaml
+servers:
+  - name: web-1              # 你给服务器起的名字
+    host: 1.2.3.4            # 服务器 IP
+    user: relay               # SSH 用户（初始化脚本自动创建的）
+```
+
+### 5.4 高级配置（可选）
+
+如果 AI 需要执行更多命令，可以在服务器配置里添加：
+
+```yaml
 servers:
   - name: web-1
     host: 1.2.3.4
     user: relay
     policy:
       allowed_commands:
-        - docker ps
-        - docker logs
-        - docker-compose ps
+        - docker ps         # 允许执行 docker ps
+        - docker logs *      # 允许查看 docker 日志
 ```
 
----
+### 5.5 危险命令永远会被阻止
 
-## 4. 初始化 Linux 服务器
-
-### 方式一：用脚本初始化（推荐）
-
-```bash
-python scripts/init_server.py \
-  --host 1.2.3.4 \
-  --user root \
-  --password "xxx" \
-  --relay-user relay \
-  --ssh-key ~/.ssh/id_ed25519.pub
-```
-
-脚本会自动：
-- 创建 `relay` 用户
-- 配置 sudoers（无密码 sudo 仅限白名单命令）
-- 写入 authorized_keys
-
-### 方式二：手动初始化
-
-登录服务器，手动执行：
-
-```bash
-# 1. 创建 relay 用户
-useradd -m -s /bin/bash relay
-
-# 2. relay 的 sudoers（仅允许特定命令）
-echo "relay ALL=(ALL) NOPASSWD: /usr/bin/docker, /usr/bin/docker-compose, /usr/bin/systemctl status *, /usr/bin/tail" > /etc/sudoers.d/relay
-
-# 3. 加入 docker 组（如果需要）
-usermod -aG docker relay
-
-# 4. 写入公钥（Relay Server 的公钥）
-mkdir -p /home/relay/.ssh
-echo "ssh-ed25519 AAAA... relay-proxy" >> /home/relay/.ssh/authorized_keys
-chown -R relay:relay /home/relay/.ssh
-chmod 600 /home/relay/.ssh/authorized_keys
-```
-
----
-
-## 5. 配置权限清单
-
-### 5.1 清单结构
+以下危险命令无论是否在白名单中都会被阻止：
 
 ```yaml
-version: "1.0"
-
-# 默认策略
-default_policy:
-  readonly: false
-  allowed_commands:
-    - docker ps
-    - docker logs
-    - echo
-    - ls
-    - pwd
-    - whoami
-
-# 服务器列表
-servers:
-  - name: web-1              # 服务器标识
-    host: 1.2.3.4            # IP 或域名
-    user: relay              # SSH 用户
-    port: 22                 # SSH 端口（默认22）
-    policy:
-      readonly: false        # true = 只读模式
-      allowed_commands:     # 白名单命令
-        - docker ps
-        - docker logs
-        - docker-compose ps
-      denied_commands:      # 黑名单命令（优先级高于白名单）
-        - rm -rf /
-        - dd if=
-        - ">:(){ :|:& };:"  # fork bomb
-      allowed_paths:        # 允许访问的路径
-        - /var/log/*
-        - /home/*/logs/*
-      denied_paths:         # 禁止访问的路径
-        - /etc/shadow
-        - /root/.ssh/*
-      sudo_commands:        # 需要 sudo 的命令
-        - systemctl restart docker
-        - docker restart *
-```
-
-### 5.2 命令级 vs 路径级权限
-
-| 类型 | 说明 | 示例 |
-|------|------|------|
-| 命令级 | 允许/禁止特定命令 | `allowed_commands: [docker ps]` |
-| 路径级 | 允许/禁止访问特定路径 | `allowed_paths: [/var/log/*]` |
-| sudo级 | 需要 sudo 才能执行的命令 | `sudo_commands: [systemctl restart *]` |
-
-### 5.3 只读模式
-
-```yaml
-servers:
-  - name: web-1
-    policy:
-      readonly: true  # 禁止写入操作（rm, mv, dd 等）
+denied_commands:
+  - rm -rf /           # 格式化磁盘
+  - dd if=              # 写入磁盘
+  - :(){ :|:& };:      # fork 炸弹
 ```
 
 ---
 
-## 6. Hermes Agent 集成
+## 6. 让 AI 执行命令
 
 ### 6.1 安装 Hermes Tool
 
 ```python
-from hermes_tool import RelayProxyTool
-
-relay = RelayProxyTool(
-    relay_url="https://your-relay.example.com",
-    admin_token="your-admin-token"
-)
+pip install hermes-tool
 ```
 
 ### 6.2 执行命令
 
 ```python
-# 执行单个命令
+from hermes_tool import RelayProxyTool
+
+relay = RelayProxyTool(
+    relay_url="http://你的Relay服务器IP:8000",
+    admin_token="部署时生成的ADMIN_TOKEN"
+)
+
+# 让 AI 执行命令
 result = relay.exec_command("web-1", "docker ps")
 print(result.output)
-print(result.exit_code)
 
-# 绑定 session（可选）
-result = relay.exec_command("web-1", "docker ps", session_id="your-session-id")
-```
-
-### 6.3 管理会话
-
-```python
-# 列出活跃会话
-sessions = relay.list_sessions()
-for s in sessions:
-    print(f"{s.session_id}: {s.agent_id} on {s.scope}")
-
-# 撤销单个会话
-relay.revoke_session("sess_abc123")
-
-# 撤销所有会话
-relay.revoke_all()
-```
-
-### 6.4 审计查询
-
-```python
-# 查询审计日志
-logs = relay.query_audit(limit=20)
-for log in logs:
-    print(f"{log.timestamp} {log.status} {log.command_checked}")
-
-# 按会话查询
-logs = relay.query_audit(session_id="sess_abc123")
-
-# 按服务器查询
-logs = relay.query_audit(server="web-1", status="denied")
+# 撤销 AI 的权限
+relay.revoke_session(result.session_id)
 ```
 
 ---
 
-## 7. 手机管理（iOS Shortcut）
+## 7. 日常管理命令
 
-详见 [shortcuts/IMPORT_GUIDE.md](shortcuts/IMPORT_GUIDE.md)
-
-| 触发词 | 作用 |
-|--------|------|
-| Siri：Relay状态 | 查看活跃会话 |
-| Siri：Relay切断 | 撤销所有Agent会话 |
-| Siri：Relay审计 | 查询审计记录 |
-
----
-
-## 8. 日常使用命令
-
-### CLI 管理工具
+### 7.1 查看活跃会话
 
 ```bash
-export RELAY_URL=https://your-relay.example.com
-export ADMIN_TOKEN=your-admin-token
-
-# 查看活跃会话
 python3 cli_admin.py sessions list
+```
 
-# 撤销指定会话
+### 7.2 撤销会话
+
+```bash
+# 撤销单个会话
 python3 cli_admin.py sessions revoke sess_abc123
 
-# 撤销所有会话
+# 撤销所有 Agent 会话
 python3 cli_admin.py sessions revoke --all
+```
 
-# 查询审计日志
+### 7.3 查看审计日志
+
+```bash
+# 最近 20 条记录
 python3 cli_admin.py audit query --limit 20
-python3 cli_admin.py audit query --server web-1 --status denied
 
-# 预检命令权限
-python3 cli_admin.py permissions check --server web-1 --command "docker ps"
+# 只看被拒绝的命令
+python3 cli_admin.py audit query --status denied
+
+# 查看特定服务器的记录
+python3 cli_admin.py audit query --server web-1
+```
+
+### 7.4 服务管理
+
+```bash
+sudo systemctl start   relay-proxy   # 启动
+sudo systemctl stop    relay-proxy   # 停止
+sudo systemctl restart relay-proxy   # 重启
+sudo systemctl status  relay-proxy   # 状态
 ```
 
 ---
 
-## 9. 安全检查清单
+## 8. 常见问题
 
-- [ ] ADMIN_TOKEN 足够复杂（32位以上随机字符串）
-- [ ] SSH 私钥已注册到 Relay Server
-- [ ] 权限清单中 denied_commands 包含危险命令
-- [ ] 服务器上 relay 用户 sudoers 已正确配置
-- [ ] 审计日志定期检查（至少每周）
-- [ ] ADMIN_TOKEN 定期轮换（建议每月）
-
----
-
-## 10. 常见问题
-
-**Q: Agent 执行命令报 403 Forbidden**
-A: 命令不在权限清单中，检查 `permission_manifest.yaml`
+**Q: AI 执行命令报 403 Forbidden**
+A: 命令不在权限清单中。检查 `/opt/relay-proxy/config/permission_manifest.yaml`
 
 **Q: SSH 连接失败**
 A: 检查服务器防火墙、SSH 端口、relay 用户公钥是否正确
 
 **Q: 如何查看历史操作记录？**
-A: `python cli_admin.py audit query --session_id <id>` 或查看审计日志目录
+A: `python3 cli_admin.py audit query`
+
+**Q: 需要几台服务器？**
+A: 最少 2 台：1 台部署 Relay Server（有公网 IP），n 台受管理的服务器
