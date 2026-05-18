@@ -245,6 +245,13 @@ sudo systemctl status  relay-proxy   # 状态
 
 ## 8. 常见问题
 
+**Q: ADMIN_TOKEN 丢了怎么办？**
+A: 在 Relay Server 上重新生成：
+```bash
+python3 -c "import secrets; print(secrets.token_hex(32))"
+```
+或查看已部署的：`sudo systemctl cat relay-proxy | grep ADMIN_TOKEN`
+
 **Q: AI 执行命令报 403 Forbidden**
 A: 命令不在权限清单中。检查 `/opt/relay-proxy/config/permission_manifest.yaml`
 
@@ -256,3 +263,12 @@ A: `python3 cli_admin.py audit query`
 
 **Q: 需要几台服务器？**
 A: 最少 2 台：1 台部署 Relay Server（有公网 IP），n 台受管理的服务器
+
+**Q: Hermes 是怎么调用 Relay Proxy 的？**
+A: Hermes 是 AI Agent，Relay Proxy 暴露 REST API。Hermes 通过 Python 代码调用：
+```python
+from hermes_tool import RelayProxyTool
+relay = RelayProxyTool(relay_url="...", admin_token="...")
+result = relay.exec_command("web-1", "docker ps")
+```
+如果你用飞书跟 Hermes 聊天，Hermes 收到消息后自动执行命令，结果通过飞书返回。整个过程 Hermes 通过 HTTP API 跟 Relay Proxy 交互。
