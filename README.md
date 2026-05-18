@@ -43,8 +43,7 @@
 
 | 文档 | 内容 |
 |------|------|
-| [DEPLOY.md](DEPLOY.md) | Fly.io 部署完整步骤 |
-| [DEPLOY_SELF_HOSTED.md](DEPLOY_SELF_HOSTED.md) | 自托管部署（自己的 Linux 服务器，完全免费） |
+| [DEPLOY_SELF_HOSTED.md](DEPLOY_SELF_HOSTED.md) | 自托管部署（自己的 Linux 服务器） |
 | [PRIVACY.md](PRIVACY.md) | 密钥安全与隐私保护 |
 | [shortcuts/](shortcuts/) | iOS Shortcut 快捷指令 |
 
@@ -55,17 +54,12 @@
 ### 1. 部署 Relay Server
 
 ```bash
-# 方式A：Fly.io 一键部署（推荐）
-git clone https://github.com/toolazytoname/relay-proxy.git
-cd relay-proxy
-FLY_API_TOKEN=xxx ./scripts/setup_all.sh
-
-# 方式B：Docker 手动部署
+# Docker 部署
 docker build -t relay-proxy .
 docker run -e ADMIN_TOKEN=xxx -p 8000:8000 relay-proxy
 ```
 
-详细步骤见 [DEPLOY.md](DEPLOY.md)
+详细步骤见 [DEPLOY_SELF_HOSTED.md](DEPLOY_SELF_HOSTED.md)
 
 ### 2. 初始化服务器
 
@@ -216,7 +210,7 @@ relay-proxy/
 ├── DEPLOY_SELF_HOSTED.md      # 自托管部署指南
 ├── PRIVACY.md                 # 隐私与安全说明
 ├── Dockerfile
-├── fly.toml
+├── requirements.txt
 ├── requirements.txt
 └── README.md
 ```
