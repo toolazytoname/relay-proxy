@@ -7,7 +7,7 @@ set -e
 
 RELAY_USER="relay"
 APP_DIR="/opt/relay-proxy"
-VENV_DIR="$APP_DIR/.venv"
+
 
 # 颜色
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
@@ -28,7 +28,7 @@ info "relay 用户就绪"
 # ---- 2. 安装依赖 ----
 info "安装系统依赖..."
 sudo apt-get update -qq
-sudo apt-get install -y -qq python3 python3-venv python3-pip git > /dev/null
+sudo apt-get install -y -qq python3 python3-pip git > /dev/null
 
 # ---- 3. 克隆/更新代码 ----
 if [ -d "$APP_DIR/.git" ]; then
@@ -41,10 +41,13 @@ else
 fi
 
 # ---- 4. 创建虚拟环境 ----
-info "安装 Python 依赖..."
-sudo python3 -m venv $VENV_DIR
-sudo $VENV_DIR/bin/pip install -q -r $APP_DIR/requirements.txt
+info "安装 uv..."
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source $HOME/.local/bin/env
 
+info "创建虚拟环境..."
+uv venv
+uv pip install -r requirements.txt
 # ---- 5. 创建必要目录 ----
 info "创建数据目录..."
 sudo mkdir -p $APP_DIR/keys
