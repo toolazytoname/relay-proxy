@@ -72,9 +72,16 @@ echo "✅ 初始化完成"
 REMOTE_EOF
 
 info "$TARGET_HOST 初始化成功！"
-echo ""
-echo "下一步：在 Relay Server 上配置权限清单 /opt/relay-proxy/config/permission_manifest.yaml"
-echo "添加："
-echo "  - name: $SERVER_NAME"
-echo "    host: $TARGET_HOST"
-echo "    user: relay"
+
+# 提取 Relay Server IP
+RELAY_HOST=$(echo $RELAY_URL | sed 's|http://||' | cut -d: -f1)
+
+info "更新权限清单..."
+sshpass -p "$ROOT_PASSWORD" scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null /dev/stdin root@$RELAY_HOST:/tmp/permission_add.yaml << EOF
+  - name: $SERVER_NAME
+    host: $TARGET_HOST
+    user: relay
+EOF
+sshpass -p "$ROOT_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@$RELAY_HOST "cat /tmp/permission_add.yaml >> /opt/relay-proxy/config/permission_manifest.yaml && rm /tmp/permission_add.yaml"
+
+info "✅ 权限清单已自动更新"
