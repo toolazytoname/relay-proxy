@@ -7,6 +7,7 @@
 你让 AI（Hermes）帮你管理服务器，但不想把服务器密码给 AI。
 
 **传统方案**：把密码给 AI → AI 可以删库、格盘
+
 **Relay Proxy**：AI 只跟 Relay Server 说话，Relay Server 用临时凭证操作服务器，随时可撤销
 
 ## 整体架构
