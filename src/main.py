@@ -406,6 +406,16 @@ async def intent_generate(
     return IntentResponse(**result)
 
 
+@app.get("/pubkey")
+async def get_pubkey():
+    """返回 SSH 公钥，供 init_target_server.sh 使用"""
+    keys_dir = Path("/opt/relay-proxy/keys")
+    pubkey_files = list(keys_dir.glob("*_ed25519.pub"))
+    if pubkey_files:
+        return pubkey_files[0].read_text().strip()
+    raise HTTPException(status_code=404, detail="未找到公钥，请先运行 generate_ssh_keys.py")
+
+
 @app.get("/health")
 async def health():
     """健康检查"""

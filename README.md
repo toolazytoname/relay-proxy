@@ -40,16 +40,12 @@ curl http://你的服务器IP:8000/health
 
 ### 第二步：初始化要管理的服务器
 
-在**你自己的本地机器**上执行：
+在 **Relay Server 上**运行（脚本已在部署时下载到 `/opt/relay-proxy`）：
 
 ```bash
-git clone https://github.com/toolazytoname/relay-proxy.git
-cd relay-proxy
-pip install paramiko
-
-python3 scripts/init_server.py \
+bash /opt/relay-proxy/scripts/init_target_server.sh \
   --host 你的服务器IP \
-  --user root \
+  --relay-url http://你的Relay服务器IP:8000 \
   --password 你的服务器密码
 ```
 

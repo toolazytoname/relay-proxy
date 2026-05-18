@@ -79,19 +79,18 @@ curl -L https://raw.githubusercontent.com/toolazytoname/relay-proxy/main/scripts
 
 ## 4. 初始化要管理的服务器
 
-在**你自己的本地机器**上执行（不是 Relay Server）：
+在 **Relay Server 上**执行：
 
 ```bash
-cd relay-proxy
-pip install paramiko
-
-python3 scripts/init_server.py \
+bash /opt/relay-proxy/scripts/init_target_server.sh \
   --host 你的服务器IP \
-  --user root \
+  --relay-url http://你的Relay服务器IP:8000 \
   --password 你的服务器密码
 ```
 
-> 脚本会用 SSH 登录服务器，创建 `relay` 用户并注入公钥。初始化完成后，**服务器密码可以丢弃**，后续 Agent 用 SSH Key 认证。
+> 脚本会从 Relay Server 获取公钥，然后 SSH 登录目标服务器，创建 `relay` 用户并注入公钥。初始化完成后，**服务器密码可以丢弃**，后续 Agent 用 SSH Key 认证。
+
+> **前提**：目标服务器需要能访问 Relay Server 的 8000 端口（获取公钥用）。
 
 ---
 

@@ -28,7 +28,7 @@ info "relay 用户就绪"
 # ---- 2. 安装依赖 ----
 info "安装系统依赖..."
 sudo apt-get update -qq
-sudo apt-get install -y -qq python3 python3-pip git > /dev/null
+sudo apt-get install -y -qq python3 python3-pip git sshpass > /dev/null
 
 # ---- 3. 克隆/更新代码 ----
 if [ -d "$APP_DIR/.git" ]; then
@@ -106,5 +106,5 @@ echo "  sudo systemctl restart relay-proxy   # 重启"
 echo "  sudo systemctl status  relay-proxy   # 状态"
 echo "  sudo journalctl -u relay-proxy -f    # 日志"
 echo ""
-echo "配置文件：$ENV_FILE"
-echo "权限清单：$APP_DIR/config/permission_manifest.yaml"
+echo "初始化要管理的服务器："
+echo "  bash $APP_DIR/scripts/init_target_server.sh --host <目标服务器IP> --relay-url http://你的Relay服务器IP:8000 --password <root密码>"
