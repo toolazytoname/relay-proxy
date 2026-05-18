@@ -5,13 +5,13 @@
   "steps": [
     {
       "action": "URL",
-      "url": "https://your-relay.example.com/api/v1/sessions",
+      "url": "${RELAY_URL}/admin/sessions",
       "method": "GET"
     },
     {
       "action": "Headers",
       "headers": {
-        "Authorization": "Bearer ${RELAY_ADMIN_TOKEN}"
+        "X-Admin-Token": "${RELAY_ADMIN_TOKEN}"
       }
     },
     {

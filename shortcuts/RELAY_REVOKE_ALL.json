@@ -6,13 +6,13 @@
   "steps": [
     {
       "action": "URL",
-      "url": "https://your-relay.example.com/api/v1/sessions",
-      "method": "DELETE"
+      "url": "${RELAY_URL}/admin/sessions/revoke/all",
+      "method": "POST"
     },
     {
       "action": "Headers",
       "headers": {
-        "Authorization": "Bearer ${RELAY_ADMIN_TOKEN}"
+        "X-Admin-Token": "${RELAY_ADMIN_TOKEN}"
       }
     },
     {
@@ -21,7 +21,7 @@
     },
     {
       "action": "Text",
-      "text": "已撤销 ${result.revoked_count} 个会话"
+      "text": "已撤销所有会话"
     }
   ]
 }

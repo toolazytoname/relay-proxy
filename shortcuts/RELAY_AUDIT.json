@@ -10,13 +10,13 @@
     },
     {
       "action": "URL",
-      "url": "https://your-relay.example.com/api/v1/audit?limit=20&server=${server_filter}",
+      "url": "${RELAY_URL}/admin/audit?limit=20",
       "method": "GET"
     },
     {
       "action": "Headers",
       "headers": {
-        "Authorization": "Bearer ${RELAY_ADMIN_TOKEN}"
+        "X-Admin-Token": "${RELAY_ADMIN_TOKEN}"
       }
     },
     {
