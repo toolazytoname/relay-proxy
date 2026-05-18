@@ -61,7 +61,7 @@ sudo systemctl cat relay-proxy | grep ADMIN_TOKEN
 ### 1. 安装依赖
 
 ```bash
-apt update && apt install -y python3 python3-venv python3-pip git
+apt update && apt install -y python3 python3-pip git
 ```
 
 ### 2. 克隆代码
