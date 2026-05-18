@@ -53,12 +53,6 @@
 
 ### 1. 部署 Relay Server
 
-```bash
-# Docker 部署
-docker build -t relay-proxy .
-docker run -e ADMIN_TOKEN=xxx -p 8000:8000 relay-proxy
-```
-
 详细步骤见 [DEPLOY_SELF_HOSTED.md](DEPLOY_SELF_HOSTED.md)
 
 ### 2. 初始化服务器
@@ -206,11 +200,8 @@ relay-proxy/
 ├── cli_admin.py               # 管理CLI
 ├── config/
 │   └── permission_manifest.yaml  # 权限清单
-├── DEPLOY.md                  # Fly.io 部署指南
 ├── DEPLOY_SELF_HOSTED.md      # 自托管部署指南
 ├── PRIVACY.md                 # 隐私与安全说明
-├── Dockerfile
-├── requirements.txt
 ├── requirements.txt
 └── README.md
 ```
