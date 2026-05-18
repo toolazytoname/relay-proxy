@@ -135,16 +135,10 @@ default_policy:
     - echo
 ```
 
-### 5.3 添加你的服务器
+### 5.3 服务器配置
 
-编辑 `/opt/relay-proxy/config/permission_manifest.yaml`，在 `servers` 列表中添加：
-
-```yaml
-servers:
-  - name: web-1              # 你给服务器起的名字
-    host: 1.2.3.4            # 服务器 IP
-    user: relay               # SSH 用户（初始化脚本自动创建的）
-```
+服务器配置在初始化时已自动添加，无需手动操作。如需修改：
+编辑 `/opt/relay-proxy/config/permission_manifest.yaml`。
 
 ### 5.4 高级配置（可选）
 
