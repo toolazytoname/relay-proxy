@@ -18,6 +18,11 @@ from .permission_engine import PermissionEngine, CheckResult
 from .ssh_client import SSHClientPool
 from .audit_logger import AuditLogger
 
+try:
+    from paramiko import Ed25519Key
+except ImportError:
+    Ed25519Key = None
+
 
 # ============================================================
 # 配置
@@ -406,14 +411,50 @@ async def intent_generate(
     return IntentResponse(**result)
 
 
-@app.get("/pubkey")
-async def get_pubkey():
-    """返回 SSH 公钥，供 init_target_server.sh 使用"""
+@app.post("/admin/keys/generate")
+async def generate_key(
+    server_name: str,
+    admin_token: str = Header(None, alias="X-Admin-Token"),
+):
+    """为指定服务器生成 SSH 密钥对（需要 admin token）"""
+    verify_admin(admin_token)
+    if Ed25519Key is None:
+        raise HTTPException(status_code=500, detail="paramiko 未安装")
+
+    # 生成密钥对
+    key = Ed25519Key.generate()
+    from io import StringIO
+    private_io = StringIO()
+    key.write_private_key(private_io)
+    private_key = private_io.getvalue()
+    public_key = f"{key.get_name()} {key.get_base64()} relay-proxy-{server_name}"
+
+    # 保存密钥
     keys_dir = Path("/opt/relay-proxy/keys")
-    pubkey_files = list(keys_dir.glob("*_ed25519.pub"))
-    if pubkey_files:
-        return pubkey_files[0].read_text().strip()
-    raise HTTPException(status_code=404, detail="未找到公钥，请先运行 generate_ssh_keys.py")
+    keys_dir.mkdir(parents=True, exist_ok=True)
+
+    private_path = keys_dir / f"{server_name}_ed25519"
+    private_path.write_text(private_key)
+    private_path.chmod(0o600)
+
+    public_path = keys_dir / f"{server_name}_ed25519.pub"
+    public_path.write_text(public_key + "\n")
+    public_path.chmod(0o644)
+
+    # 注册到 SSH 连接池
+    ssh_pool.register_key(server_name, private_key)
+
+    return {"server_name": server_name, "public_key": public_key}
+
+
+@app.get("/pubkey/{server_name}")
+async def get_server_pubkey(server_name: str):
+    """返回指定服务器的 SSH 公钥"""
+    keys_dir = Path("/opt/relay-proxy/keys")
+    public_path = keys_dir / f"{server_name}_ed25519.pub"
+    if public_path.exists():
+        return public_path.read_text().strip()
+    raise HTTPException(status_code=404, detail=f"未找到 {server_name} 的公钥")
 
 
 @app.get("/health")
