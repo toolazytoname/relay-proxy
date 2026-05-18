@@ -1,226 +1,130 @@
 # Relay Proxy
 
-> Agent SSH Relay — 给 AI Agent 赋予 Linux 服务器操作能力，同时保持最小权限 + 完整审计。
+> 让 AI Agent 操作你的 Linux 服务器，但你不用把密码交给它。
 
-**核心问题**：Agent 需要操作服务器，但你不想把 root 密码交给它。
-**解法**：Agent 只跟 Relay Server 说话，Relay Server 用临时凭证连接服务器，所有操作都有记录，随时可撤销。
+## 它解决什么问题
 
-[![GitHub stars](https://img.shields.io/github/stars/toolazytoname/relay-proxy)](https://github.com/toolazytoname/relay-proxy)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+你让 AI（Hermes）帮你管理服务器，但不想把服务器密码给 AI。
 
----
+**传统方案**：把密码给 AI → AI 可以删库、格盘
+**Relay Proxy**：AI 只跟 Relay Server 说话，Relay Server 用临时凭证操作服务器，随时可撤销
 
-## 架构
+## 整体架构
 
 ```
-┌─────────────┐      HTTPS       ┌──────────────┐      SSH       ┌─────────────┐
-│  Hermes     │ ──────────────── │   Relay      │ ────────────── │  Linux      │
-│  Agent      │   无服务器密码     │   Server     │   临时Key      │  Server     │
-└─────────────┘                  └──────────────┘               └─────────────┘
-                                        │
-                                 ┌──────┴──────┐
-                                 │  会话管理    │ ← 一键撤销，立刻失效
-                                 │  审计日志    │ ← 完整决策链
-                                 │  权限引擎   │ ← 最小授权
-                                 └─────────────┘
+┌──────────────┐     HTTPS      ┌──────────────┐     SSH     ┌─────────────┐
+│   Hermes     │ ─────────────→ │   Relay       │ ──────────→ │  Linux      │
+│   (AI Agent) │               │   Server      │             │  Server     │
+│              │  Admin Token │  (你部署的)    │             │  (受管理的)  │
+└──────────────┘               └──────────────┘             └─────────────┘
+         ↑                            │
+         │                            ↓
+         │                     ┌──────────────┐
+         └─────────────────── │   你（管理员）│
+                              └──────────────┘
+                                    Admin Token
 ```
 
----
+## 使用流程
 
-## 特性
+### 第一步：部署 Relay Server
 
-- 🔐 **最小权限** — 每个 Agent 会话只有临时 SSH Key，只能做你允许的事
-- ⚡ **即时撤销** — 一键收回，Agent 下次调用立刻 403
-- 📋 **完整审计** — 谁、什么时候、做了什么、耗时多久，全部记录
-- 🧠 **意图映射** — Agent 说"帮我看看服务器状态"，自动解析为 `uptime && df -h`
-- 🔍 **权限预检** — 不确定的命令可以先问再执行
-- 📱 **管理CLI** — 手机上也能查日志、撤销会话（配合 iOS Shortcuts）
-- 📱 **手机快捷指令** — Siri 一句话查看状态、撤销会话、查审计
-
----
-
-## 文档目录
-
-| 文档 | 内容 |
-|------|------|
-| [DEPLOY_SELF_HOSTED.md](DEPLOY_SELF_HOSTED.md) | 自托管部署（自己的 Linux 服务器） |
-| [PRIVACY.md](PRIVACY.md) | 密钥安全与隐私保护 |
-| [shortcuts/](shortcuts/) | iOS Shortcut 快捷指令 |
-
----
-
-## 快速开始
-
-### 1. 部署 Relay Server
-
-详细步骤见 [DEPLOY_SELF_HOSTED.md](DEPLOY_SELF_HOSTED.md)
-
-### 2. 初始化服务器
+在**你有公网 IP 的服务器**上运行：
 
 ```bash
-# 生成 SSH 密钥对（每台服务器独立）
+git clone https://github.com/toolazytoname/relay-proxy.git
+cd relay-proxy
+
+# 安装 uv（环境管理）
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source $HOME/.local/bin/env
+
+# 安装依赖
+uv venv
+uv pip install -r requirements.txt
+
+# 生成管理员 Token
+export ADMIN_TOKEN=$(python3 -c "import secrets; print(secrets.token_hex(32))")
+
+# 配置
+export MANIFEST_PATH=/opt/relay-proxy/config/permission_manifest.yaml
+export LOG_DIR=/opt/relay-proxy/logs
+
+# 启动
+uv run uvicorn src.main:app --host 0.0.0.0 --port 8000
+```
+
+**验证部署成功：**
+```bash
+curl http://你的服务器IP:8000/health
+# 返回 {"status": "ok"}
+```
+
+### 第二步：初始化你的 Linux 服务器
+
+在**受管理的服务器**上（需要 root 密码）：
+
+```bash
+# 在 Relay Server 机器上生成密钥
 python3 scripts/generate_ssh_keys.py
 
-# 初始化服务器（创建 relay 账号，注入公钥）
-python3 scripts/init_server.py --host 1.2.3.4 --user root --password xxx
+# 在受管理服务器上初始化（创建 relay 用户，注入公钥）
+python3 scripts/init_server.py \
+  --host 1.2.3.4 \
+  --user root \
+  --password "你的服务器密码"
 ```
 
-### 3. 配置权限清单
+### 第三步：配置权限清单
 
-编辑 `config/permission_manifest.yaml`，定义每个服务器允许执行的命令。
-
-### 4. Agent 调用
-
-```python
-from hermes_tool import RelayProxyTool
-
-relay = RelayProxyTool(
-    relay_url="https://your-relay.example.com",
-    admin_token="xxx"
-)
-
-# 执行命令
-result = relay.exec_command("web-1", "docker ps")
-print(result.output)
-
-# 撤销会话
-relay.revoke_session(result.session_id)
-```
-
----
-
-## CLI 管理工具
-
-```bash
-export RELAY_URL=https://your-relay.example.com
-export ADMIN_TOKEN=xxx
-
-# 查看活跃会话
-python3 cli_admin.py sessions list
-
-# 撤销指定会话
-python3 cli_admin.py sessions revoke sess_abc123
-
-# 查询审计日志
-python3 cli_admin.py audit query --limit 20
-
-# 预检命令权限
-python3 cli_admin.py permissions check --server web-1 --command "docker ps"
-```
-
----
-
-## iOS 快捷指令
-
-详见 [shortcuts/IMPORT_GUIDE.md](shortcuts/IMPORT_GUIDE.md)
-
-| 触发词 | 作用 |
-|--------|------|
-| Siri：Relay状态 | 查看活跃会话 |
-| Siri：Relay切断 | 撤销所有Agent会话 |
-| Siri：Relay审计 | 查询审计记录 |
-
----
-
-## 权限清单示例
+编辑 `config/permission_manifest.yaml`：
 
 ```yaml
-version: "1.0"
 servers:
   - name: web-1
     host: 1.2.3.4
     user: relay
     policy:
-      readonly: false
       allowed_commands:
         - docker ps
         - docker logs
-        - docker-compose ps
-        - tail /var/log/nginx/*.log
-      denied_commands:
-        - rm -rf /
-        - dd if=
-        - ">:(){ :|:& };:"
-      allowed_paths:
-        - /var/log/*
-        - /home/*/logs/*
-      denied_paths:
-        - /etc/shadow
-        - /root/.ssh/*
+        - echo
 ```
 
----
+### 第四步：让 Hermes 调用
 
-## 审计日志格式
+```python
+from hermes_tool import RelayProxyTool
 
-```json
-{
-  "audit_id": "aud_abc123",
-  "timestamp": "2025-05-15T19:30:00+08:00",
-  "session_id": "sess_xxx",
-  "server": "web-1",
-  "command": "docker ps",
-  "intent_resolved": null,
-  "exit_code": 0,
-  "duration_ms": 234,
-  "status": "success",
-  "permission_check": {
-    "allowed": true,
-    "policy_matched": "docker_manager"
-  }
-}
+relay = RelayProxyTool(
+    relay_url="http://你的Relay服务器IP:8000",
+    admin_token="你的ADMIN_TOKEN"
+)
+
+# AI 执行命令
+result = relay.exec_command("web-1", "docker ps")
+print(result.output)
+
+# 撤销 AI 的权限
+relay.revoke_session(result.session_id)
 ```
 
-> **隐私说明**：审计日志记录命令内容，但**不记录命令输出**，保护服务器敏感数据。详见 [PRIVACY.md](PRIVACY.md)
+## 快速问答
 
----
+**Q: 需要几台服务器？**
+A: 最少 2 台：1 台部署 Relay Server（有公网 IP），n 台受管理的服务器
 
-## 目录结构
+**Q: ADMIN_TOKEN 是什么？**
+A: 你的"老板权限"，可以查看所有 AI 会话、撤销权限、查审计日志
 
-```
-relay-proxy/
-├── src/
-│   ├── main.py              # FastAPI 主入口
-│   ├── auth.py               # Token + 会话管理
-│   ├── permission_engine.py  # 权限引擎 + 意图映射
-│   ├── ssh_client.py         # SSH 连接池
-│   ├── audit_logger.py       # 审计日志
-│   └── hermes_tool.py        # Hermes Agent 接口封装
-├── scripts/
-│   ├── init_server.py        # 服务器初始化
-│   ├── generate_ssh_keys.py  # SSH 密钥生成
-│   └── deploy_to_server.sh   # 自托管一键部署脚本
-├── deploy/
-│   └── systemd/
-│       └── relay-proxy.service  # systemd 服务配置
-├── shortcuts/                 # iOS Shortcut 配置
-│   ├── RELAY_STATUS.json
-│   ├── RELAY_REVOKE_ALL.json
-│   └── IMPORT_GUIDE.md
-├── cli_admin.py               # 管理CLI
-├── config/
-│   └── permission_manifest.yaml  # 权限清单
-├── DEPLOY_SELF_HOSTED.md      # 自托管部署指南
-├── PRIVACY.md                 # 隐私与安全说明
-├── requirements.txt
-└── README.md
-```
+**Q: 怎么让 AI 执行命令？**
+A: AI 调用 `relay.exec_command("服务器名", "命令")`，Relay Server 转发到服务器
 
----
+**Q: 如何撤销 AI 的权限？**
+A: `relay.revoke_session(session_id)` 或 `relay.revoke_all()` 撤销所有
 
-## 安全说明
+## 详细文档
 
-> ⚠️ **请先阅读 [PRIVACY.md](PRIVACY.md)** 了解密钥安全要求。
-
-- Agent 不持有任何服务器密码，只持有临时 SSH Key
-- SSH Key 有 TTL，过期自动失效
-- 所有命令经过权限引擎，超出清单直接拒绝
-- 敏感命令（如 `rm -rf`）在 `denied_commands` 中拦截
-- 管理 Token（ADMIN_TOKEN）仅用于管理操作，Agent 不知道
-- 审计日志不记录命令输出，保护敏感数据
-
----
-
-## License
-
-MIT © toolazytoname
+- [DEPLOY_SELF_HOSTED.md](DEPLOY_SELF_HOSTED.md) - 完整部署指南
+- [PRIVACY.md](PRIVACY.md) - 安全说明
+- [HOW_TO_USE.md](HOW_TO_USE.md) - 详细使用指南
