@@ -55,6 +55,13 @@ Agent → Relay Server（HTTPS）→ 服务器（只认 SSH Key）
 | Relay Server | 命令转发 + 权限控制 | 自托管（见下文） |
 | Linux Server | 实际执行命令 | 你的服务器 |
 
+## Token 鉴权说明
+
+| Token | 谁用 | 什么时候用 | 作用 |
+|------|------|-----------|------|
+| ADMIN_TOKEN | 你（管理员） | 任何时候 | 查看会话、撤销权限、查审计日志 |
+| Agent Token | AI（Hermes） | AI 执行命令时 | AI 的临时操作凭证（自动生成） |
+
 ---
 
 ## 3. 部署 Relay Server
@@ -79,7 +86,7 @@ curl -L https://raw.githubusercontent.com/toolazytoname/relay-proxy/main/scripts
 
 ## 4. 初始化要管理的服务器
 
-在 **Relay Server 上**执行：
+在你**本地电脑**上执行：
 
 ```bash
 bash /opt/relay-proxy/scripts/init_target_server.sh \
@@ -88,9 +95,9 @@ bash /opt/relay-proxy/scripts/init_target_server.sh \
   --password 你的服务器密码
 ```
 
-> 脚本会从 Relay Server 获取公钥，然后 SSH 登录目标服务器，创建 `relay` 用户并注入公钥。初始化完成后，**服务器密码可以丢弃**，后续 Agent 用 SSH Key 认证。
+> 脚本会自动从 Relay Server 获取公钥，然后 SSH 登录目标服务器，创建 `relay` 用户并注入公钥。初始化完成后，**服务器密码可以丢弃**，后续 Agent 用 SSH Key 认证。
 
-> **前提**：目标服务器需要能访问 Relay Server 的 8000 端口（获取公钥用）。
+> **前提**：你的电脑需要能访问 Relay Server 的 8000 端口（获取公钥用）。
 
 ---
 
