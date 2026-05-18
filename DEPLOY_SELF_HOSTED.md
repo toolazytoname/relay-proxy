@@ -61,7 +61,7 @@ sudo systemctl cat relay-proxy | grep ADMIN_TOKEN
 ### 1. 安装依赖
 
 ```bash
-apt update && apt install -y python3 python3-venv python3-pip git
+apt update && apt install -y python3 python3-pip git
 ```
 
 ### 2. 克隆代码
@@ -75,16 +75,17 @@ cd relay-proxy
 ### 3. 安装 Python 依赖
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source $HOME/.local/bin/env
+uv venv
+uv pip install -r requirements.txt
 ```
 
 ### 4. 配置环境变量
 
 ```bash
 cat > /opt/relay-proxy/.env << 'EOF'
-ADMIN_TOKEN=你的管理Token（自己生成）
+ADMIN_TOKEN=$(python3 -c "import secrets; print(secrets.token_hex(32))")  # 或手动生成
 MANIFEST_PATH=/opt/relay-proxy/config/permission_manifest.yaml
 LOG_DIR=/opt/relay-proxy/logs
 TOKEN_STORE_PATH=/opt/relay-proxy/tokens.jsonl
@@ -299,7 +300,7 @@ ufw status
 ├── deploy/
 │   └── systemd/
 │       └── relay-proxy.service    # systemd 配置
-├── .venv/                # Python 虚拟环境
+├── .venv                # uv 虚拟环境
 ├── .env                  # 环境变量（密钥）
 ├── logs/                 # 审计日志
 └── tokens/               # Token 存储
