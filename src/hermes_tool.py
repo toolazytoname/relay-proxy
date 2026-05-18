@@ -3,7 +3,7 @@ Hermes Tool — Agent 接口层
 把 Relay Proxy 封装成 Hermes Agent 可调用的 Tool。
 
 用法（在你的 Hermes 配置或 skill 中）：
-1. 启动 Relay Server（部署在 Fly.io 或你自己服务器）
+1. 启动 Relay Server（部署在你自己服务器）
 2. 配置 RELAY_URL + ADMIN_TOKEN 环境变量
 3. 在 Hermes 的 tools 配置里引用此类
 """

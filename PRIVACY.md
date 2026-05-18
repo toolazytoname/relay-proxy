@@ -12,15 +12,15 @@ Relay Proxy 设计的第一原则：**Agent 永远不接触服务器密码**。
 |------|------|------|
 | SSH 私钥 | `keys/*_ed25519` | 持有私钥即可连接服务器 |
 | 服务器密码 | `init_server.py` 运行时 | 直接登录凭证 |
-| ADMIN_TOKEN | Fly.io Secrets | 管理接口的完全访问权限 |
+| ADMIN_TOKEN | 环境变量 | 管理接口的完全访问权限 |
 | `.env` 文件 | `RELAY_URL`, `ADMIN_TOKEN` | 运行时凭证 |
 
 ### 安全存放
 
 | 凭证 | 推荐存储 |
 |------|----------|
-| ADMIN_TOKEN | Fly.io Secrets（`fly secrets set`）|
-| SSH 私钥 | Fly.io Secrets（每服务器一个 secret） |
+| ADMIN_TOKEN | 环境变量或安全存储（如 HashiCorp Vault） |
+| SSH 私钥 | 环境变量（SSH_KEY_*）或安全存储 |
 | 服务器密码 | 仅初始化时使用，用完即弃 |
 
 ## 审计日志的隐私说明
@@ -47,10 +47,10 @@ Relay Proxy 设计的第一原则：**Agent 永远不接触服务器密码**。
 ## 最小权限原则
 
 ```yaml
-# ❌ 错误示范：权限过大
+# 错误示范：权限过大
 allowed_commands: ["*"]           # 允许所有命令
 
-# ✅ 正确示范：精确授权
+# 正确示范：精确授权
 allowed_commands:
   - docker ps
   - docker logs --tail 100
