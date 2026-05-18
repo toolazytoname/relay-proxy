@@ -63,8 +63,8 @@ class TestRelayClient:
         assert "localhost" in client.url
 
     def test_init_custom(self):
-        client = RelayClient(url="https://custom.fly.dev", token="mytoken")
-        assert client.url == "https://custom.fly.dev"
+        client = RelayClient(url="https://custom.example.com", token="mytoken")
+        assert client.url == "https://custom.example.com"
         assert client.token == "mytoken"
 
     def test_headers_without_token(self):

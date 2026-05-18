@@ -72,8 +72,8 @@ class TestRelayProxyTool:
         assert "localhost:8000" in tool.relay_url
 
     def test_init_custom_url(self):
-        tool = RelayProxyTool(relay_url="https://my-relay.fly.dev")
-        assert tool.relay_url == "https://my-relay.fly.dev"
+        tool = RelayProxyTool(relay_url="https://my-relay.example.com")
+        assert tool.relay_url == "https://my-relay.example.com"
         assert not tool.relay_url.endswith("/")
 
     def test_headers_no_token(self):

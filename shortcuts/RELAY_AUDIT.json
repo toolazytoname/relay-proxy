@@ -10,7 +10,7 @@
     },
     {
       "action": "URL",
-      "url": "https://placeholder-relay.fly.dev/api/v1/audit?limit=20&server=${server_filter}",
+      "url": "https://your-relay.example.com/api/v1/audit?limit=20&server=${server_filter}",
       "method": "GET"
     },
     {

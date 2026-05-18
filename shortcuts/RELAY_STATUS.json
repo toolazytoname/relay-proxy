@@ -5,7 +5,7 @@
   "steps": [
     {
       "action": "URL",
-      "url": "https://placeholder-relay.fly.dev/api/v1/sessions",
+      "url": "https://your-relay.example.com/api/v1/sessions",
       "method": "GET"
     },
     {

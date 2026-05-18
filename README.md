@@ -81,7 +81,7 @@ python3 scripts/init_server.py --host 1.2.3.4 --user root --password xxx
 from hermes_tool import RelayProxyTool
 
 relay = RelayProxyTool(
-    relay_url="https://your-relay.fly.dev",
+    relay_url="https://your-relay.example.com",
     admin_token="xxx"
 )
 
@@ -98,7 +98,7 @@ relay.revoke_session(result.session_id)
 ## CLI 管理工具
 
 ```bash
-export RELAY_URL=https://your-relay.fly.dev
+export RELAY_URL=https://your-relay.example.com
 export ADMIN_TOKEN=xxx
 
 # 查看活跃会话

@@ -305,7 +305,7 @@ def main():
   python3 cli_admin.py permissions manifest
 
 环境变量：
-  RELAY_URL=http://your-relay-server.fly.dev
+  RELAY_URL=http://your-relay-server.example.com
   ADMIN_TOKEN=your_admin_token_here
         """,
     )
